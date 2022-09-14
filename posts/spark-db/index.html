@@ -1,0 +1,445 @@
+<!DOCTYPE html><html lang="zh-CN" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><meta name="generator" content="Jekyll v4.2.2" /><meta property="og:title" content="Spark数据库操作初步" /><meta name="author" content="katus" /><meta property="og:locale" content="zh_CN" /><meta name="description" content="操作系统：Windows 10 1909版本 IDE：IntelliJ IDEA Ultimate 2019.2.4版本 JDK：1.8.0_221 Hadoop：2.7.1 Spark：3.0.0-preview Scala：2.12.10 Maven：3.6.2 数据库：MySQL 8.0.18" /><meta property="og:description" content="操作系统：Windows 10 1909版本 IDE：IntelliJ IDEA Ultimate 2019.2.4版本 JDK：1.8.0_221 Hadoop：2.7.1 Spark：3.0.0-preview Scala：2.12.10 Maven：3.6.2 数据库：MySQL 8.0.18" /><link rel="canonical" href="https://katus98.github.io/posts/spark-db/" /><meta property="og:url" content="https://katus98.github.io/posts/spark-db/" /><meta property="og:site_name" content="SUN Katus’ Blog" /><meta property="og:type" content="article" /><meta property="article:published_time" content="2019-11-29T11:31:03+08:00" /><meta name="twitter:card" content="summary" /><meta property="twitter:title" content="Spark数据库操作初步" /><meta name="twitter:site" content="@katus_SKR" /><meta name="twitter:creator" content="@katus" /> <script type="application/ld+json"> {"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"katus"},"dateModified":"2019-11-29T11:31:03+08:00","datePublished":"2019-11-29T11:31:03+08:00","description":"操作系统：Windows 10 1909版本 IDE：IntelliJ IDEA Ultimate 2019.2.4版本 JDK：1.8.0_221 Hadoop：2.7.1 Spark：3.0.0-preview Scala：2.12.10 Maven：3.6.2 数据库：MySQL 8.0.18","headline":"Spark数据库操作初步","mainEntityOfPage":{"@type":"WebPage","@id":"https://katus98.github.io/posts/spark-db/"},"url":"https://katus98.github.io/posts/spark-db/"}</script><title>Spark数据库操作初步 | SUN Katus' Blog</title><link rel="apple-touch-icon" sizes="180x180" href="/assets/img/favicons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicons/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicons/favicon-16x16.png"><link rel="manifest" href="/assets/img/favicons/site.webmanifest"><link rel="shortcut icon" href="/assets/img/favicons/favicon.ico"><meta name="apple-mobile-web-app-title" content="SUN Katus' Blog"><meta name="application-name" content="SUN Katus' Blog"><meta name="msapplication-TileColor" content="#da532c"><meta name="msapplication-config" content="/assets/img/favicons/browserconfig.xml"><meta name="theme-color" content="#ffffff"><link rel="preconnect" href="https://fonts.googleapis.com" ><link rel="dns-prefetch" href="https://fonts.googleapis.com" ><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="dns-prefetch" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com" ><link rel="dns-prefetch" href="https://fonts.googleapis.com" ><link rel="preconnect" href="https://cdn.jsdelivr.net" ><link rel="dns-prefetch" href="https://cdn.jsdelivr.net" ><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato&family=Source+Sans+Pro:wght@400;600;700;900&display=swap"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css"><link rel="stylesheet" href="/assets/css/style.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/magnific-popup@1/dist/magnific-popup.min.css"> <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script> <script type="text/javascript"> class ModeToggle { static get MODE_KEY() { return "mode"; } static get MODE_ATTR() { return "data-mode"; } static get DARK_MODE() { return "dark"; } static get LIGHT_MODE() { return "light"; } static get ID() { return "mode-toggle"; } constructor() { if (this.hasMode) { if (this.isDarkMode) { if (!this.isSysDarkPrefer) { this.setDark(); } } else { if (this.isSysDarkPrefer) { this.setLight(); } } } let self = this; /* always follow the system prefers */ this.sysDarkPrefers.addEventListener("change", () => { if (self.hasMode) { if (self.isDarkMode) { if (!self.isSysDarkPrefer) { self.setDark(); } } else { if (self.isSysDarkPrefer) { self.setLight(); } } self.clearMode(); } self.notify(); }); } /* constructor() */ get sysDarkPrefers() { return window.matchMedia("(prefers-color-scheme: dark)"); } get isSysDarkPrefer() { return this.sysDarkPrefers.matches; } get isDarkMode() { return this.mode === ModeToggle.DARK_MODE; } get isLightMode() { return this.mode === ModeToggle.LIGHT_MODE; } get hasMode() { return this.mode != null; } get mode() { return sessionStorage.getItem(ModeToggle.MODE_KEY); } /* get the current mode on screen */ get modeStatus() { if (this.isDarkMode || (!this.hasMode && this.isSysDarkPrefer)) { return ModeToggle.DARK_MODE; } else { return ModeToggle.LIGHT_MODE; } } setDark() { $('html').attr(ModeToggle.MODE_ATTR, ModeToggle.DARK_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.DARK_MODE); } setLight() { $('html').attr(ModeToggle.MODE_ATTR, ModeToggle.LIGHT_MODE); sessionStorage.setItem(ModeToggle.MODE_KEY, ModeToggle.LIGHT_MODE); } clearMode() { $('html').removeAttr(ModeToggle.MODE_ATTR); sessionStorage.removeItem(ModeToggle.MODE_KEY); } /* Notify another plugins that the theme mode has changed */ notify() { window.postMessage({ direction: ModeToggle.ID, message: this.modeStatus }, "*"); } } /* ModeToggle */ const toggle = new ModeToggle(); function flipMode() { if (toggle.hasMode) { if (toggle.isSysDarkPrefer) { if (toggle.isLightMode) { toggle.clearMode(); } else { toggle.setLight(); } } else { if (toggle.isDarkMode) { toggle.clearMode(); } else { toggle.setDark(); } } } else { if (toggle.isSysDarkPrefer) { toggle.setLight(); } else { toggle.setDark(); } } toggle.notify(); } /* flipMode() */ </script><body data-spy="scroll" data-target="#toc" data-topbar-visible="true"><div id="sidebar" class="d-flex flex-column align-items-end"><div class="profile-wrapper text-center"><div id="avatar"> <a href="/" class="mx-auto"> <img src="/assets/img/favicons/apple-touch-icon.png" alt="avatar" onerror="this.style.display='none'"> </a></div><div class="site-title mt-3"> <a href="/">SUN Katus' Blog</a></div><div class="site-subtitle font-italic">幻想成为一位技术大神</div></div><ul class="w-100"><li class="nav-item"> <a href="/" class="nav-link"> <i class="fa-fw fas fa-home ml-xl-3 mr-xl-3 unloaded"></i> <span>首页</span> </a><li class="nav-item"> <a href="/categories/" class="nav-link"> <i class="fa-fw fas fa-stream ml-xl-3 mr-xl-3 unloaded"></i> <span>分类</span> </a><li class="nav-item"> <a href="/tags/" class="nav-link"> <i class="fa-fw fas fa-tag ml-xl-3 mr-xl-3 unloaded"></i> <span>标签</span> </a><li class="nav-item"> <a href="/archives/" class="nav-link"> <i class="fa-fw fas fa-archive ml-xl-3 mr-xl-3 unloaded"></i> <span>归档</span> </a><li class="nav-item"> <a href="/about/" class="nav-link"> <i class="fa-fw fas fa-info-circle ml-xl-3 mr-xl-3 unloaded"></i> <span>关于</span> </a></ul><div class="sidebar-bottom mt-auto d-flex flex-wrap justify-content-center align-items-center"> <button class="mode-toggle btn" aria-label="Switch Mode"> <i class="fas fa-adjust"></i> </button> <span class="icon-border"></span> <a href="https://github.com/katus98" aria-label="github" target="_blank" rel="noopener"> <i class="fab fa-github"></i> </a> <a href="https://twitter.com/katus_SKR" aria-label="twitter" target="_blank" rel="noopener"> <i class="fab fa-twitter"></i> </a> <a href=" javascript:location.href = 'mailto:' + ['sunkeran0818','outlook.com'].join('@')" aria-label="email" > <i class="fas fa-envelope"></i> </a> <a href="/feed.xml" aria-label="rss" > <i class="fas fa-rss"></i> </a></div></div><div id="topbar-wrapper"><div id="topbar" class="container d-flex align-items-center justify-content-between h-100 pl-3 pr-3 pl-md-4 pr-md-4"> <span id="breadcrumb"> <span> <a href="/"> 首页 </a> </span> <span>Spark数据库操作初步</span> </span> <i id="sidebar-trigger" class="fas fa-bars fa-fw"></i><div id="topbar-title"> 文章</div><i id="search-trigger" class="fas fa-search fa-fw"></i> <span id="search-wrapper" class="align-items-center"> <i class="fas fa-search fa-fw"></i> <input class="form-control" id="search-input" type="search" aria-label="search" autocomplete="off" placeholder="搜索..."> </span> <span id="search-cancel" >取消</span></div></div><div id="main-wrapper" class="d-flex justify-content-center"><div id="main" class="container pl-xl-4 pr-xl-4"><div class="row"><div id="core-wrapper" class="col-12 col-lg-11 col-xl-9 pr-xl-4"><div class="post pl-1 pr-1 pl-md-2 pr-md-2"><h1 data-toc-skip>Spark数据库操作初步</h1><div class="post-meta text-muted"> <span> 发表于 <em class="" data-ts="1574998263" data-df="YYYY-MM-DD" data-toggle="tooltip" data-placement="bottom"> 2019-11-29 </em> </span><div class="d-flex justify-content-between"> <span> 作者 <em> SUN Katus </em> </span><div> <span class="readtime" data-toggle="tooltip" data-placement="bottom" title="1990 字"> <em>11 分钟</em>阅读</span></div></div></div><div class="post-content"><blockquote><ul><li>操作系统：Windows 10 1909版本<li>IDE：IntelliJ IDEA Ultimate 2019.2.4版本<li>JDK：1.8.0_221<li>Hadoop：2.7.1<li>Spark：3.0.0-preview<li>Scala：2.12.10<li>Maven：3.6.2<li>数据库：MySQL 8.0.18</ul></blockquote><h2 id="一准备工作"><span class="mr-2">一、准备工作</span><a href="#一准备工作" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h2><p>在之前环境的基础上我们需要安装一个数据库，本文选取MySQL最新版本8.0.18。安装部署数据库的方法不再详述，各位可以参考<a href="https://blog.csdn.net/qq_37350706/article/details/81707862">MySQL 8.0.18安装教程(Windows 64位)</a>。</p><p>数据库完成部署之后可以在IntelliJ IDEA中用附带的插件进行连接，点击右侧栏中的Database，添加新的MySQL连接，设置界面如下。</p><p><img data-src="https://img-blog.csdnimg.cn/20191128153109959.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDE5NTc1Nw==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" data-proofer-ignore></p><p>如果没有连接驱动，直接默认下载最新版的即可（虽然最新版的是8.0.15，但是实测可以连接8.0.18版本的MySQL数据库）。URL处一定要指定时区，否则会连接失败；另外注意输入正确的用户名和密码。此时点击测试连接应该会出现上图中绿色的对勾和相关信息，点击OK即可。</p><p>然后在Database栏位中创建一个新的数据库，名为：hivemetastore。然后在其中创建相应的表并且导入一些示例数据。</p><div class="language-sql highlighter-rouge"><div class="code-header"> <span data-label-text="Sql"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre><td class="rouge-code"><pre><span class="k">drop</span> <span class="k">table</span> <span class="n">if</span> <span class="k">exists</span> <span class="n">people</span><span class="p">;</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">people</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="k">level</span> <span class="nb">smallint</span> <span class="k">default</span> <span class="mi">0</span>
+<span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">people</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'zhu'</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'katus'</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">'li'</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</pre></table></code></div></div><p>然后我们需要在pom.xml中补充新的依赖，即MySQL连接驱动相关依赖，更新之后的pom.xml如下。</p><div class="language-xml highlighter-rouge"><div class="code-header"> <span data-label-text="XML"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+</pre><td class="rouge-code"><pre><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="nt">&lt;project</span> <span class="na">xmlns=</span><span class="s">"http://maven.apache.org/POM/4.0.0"</span>
+         <span class="na">xmlns:xsi=</span><span class="s">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="na">xsi:schemaLocation=</span><span class="s">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+
+    <span class="nt">&lt;groupId&gt;</span>zju<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>WordCount<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>1.0-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+
+    <span class="nt">&lt;properties&gt;</span>
+        <span class="nt">&lt;project.build.sourceEncoding&gt;</span>UTF-8<span class="nt">&lt;/project.build.sourceEncoding&gt;</span>
+        <span class="nt">&lt;jdk.version&gt;</span>1.8.0<span class="nt">&lt;/jdk.version&gt;</span>
+        <span class="nt">&lt;spark.version&gt;</span>3.0.0-preview<span class="nt">&lt;/spark.version&gt;</span>
+        <span class="nt">&lt;scala.version&gt;</span>2.12<span class="nt">&lt;/scala.version&gt;</span>
+        <span class="nt">&lt;mysql.version&gt;</span>8.0.18<span class="nt">&lt;/mysql.version&gt;</span>
+    <span class="nt">&lt;/properties&gt;</span>
+
+    <span class="nt">&lt;dependencies&gt;</span>
+        <span class="c">&lt;!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core --&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.apache.spark<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spark-core_${scala.version}<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;version&gt;</span>${spark.version}<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;/dependency&gt;</span>
+
+        <span class="c">&lt;!-- https://mvnrepository.com/artifact/org.apache.spark/spark-sql --&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.apache.spark<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spark-sql_${scala.version}<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;version&gt;</span>${spark.version}<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;/dependency&gt;</span>
+
+        <span class="c">&lt;!-- https://mvnrepository.com/artifact/org.apache.spark/spark-hive --&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>org.apache.spark<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>spark-hive_${scala.version}<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;version&gt;</span>${spark.version}<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;/dependency&gt;</span>
+
+        <span class="c">&lt;!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java --&gt;</span>
+        <span class="nt">&lt;dependency&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>mysql<span class="nt">&lt;/groupId&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>mysql-connector-java<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;version&gt;</span>${mysql.version}<span class="nt">&lt;/version&gt;</span>
+        <span class="nt">&lt;/dependency&gt;</span>
+    <span class="nt">&lt;/dependencies&gt;</span>
+<span class="nt">&lt;/project&gt;</span>
+</pre></table></code></div></div><p>然后倒入相关依赖，完成即可。</p><h2 id="二spark连接数据库"><span class="mr-2">二、Spark连接数据库</span><a href="#二spark连接数据库" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h2><p>以下是一份连接hivemetastore数据库，读取people表中全部数据并显示在控制台的代码。</p><div class="language-java highlighter-rouge"><div class="code-header"> <span data-label-text="Java"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+</pre><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.Properties</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">DbConnect</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">SparkSession</span> <span class="n">session</span> <span class="o">=</span> <span class="nc">SparkSession</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">getOrCreate</span><span class="o">();</span>
+        <span class="nc">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SQLContext</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+
+        <span class="c1">// 数据库连接参数</span>
+        <span class="nc">String</span> <span class="n">dbUrl</span> <span class="o">=</span> <span class="s">"jdbc:mysql://localhost:3306/hivemetastore?serverTimezone=Asia/Shanghai"</span><span class="o">;</span>
+        <span class="nc">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">"people"</span><span class="o">;</span>
+        <span class="nc">Properties</span> <span class="n">connectionProperties</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Properties</span><span class="o">();</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"user"</span><span class="o">,</span> <span class="s">"root"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"password"</span><span class="o">,</span> <span class="s">"xxxxx123"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"driver"</span><span class="o">,</span> <span class="s">"com.mysql.cj.jdbc.Driver"</span><span class="o">);</span>
+
+        <span class="c1">// 读取hivemetastore数据库中的people表的全部内容</span>
+        <span class="n">sqlContext</span><span class="o">.</span><span class="na">read</span><span class="o">().</span><span class="na">jdbc</span><span class="o">(</span><span class="n">dbUrl</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProperties</span><span class="o">).</span><span class="na">select</span><span class="o">(</span><span class="s">"*"</span><span class="o">).</span><span class="na">show</span><span class="o">();</span>
+
+        <span class="n">session</span><span class="o">.</span><span class="na">stop</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></table></code></div></div><p>运行之后在控制台会有如下输出。（没有截取Spark集群的状态信息的控制台输出）</p><p><img data-src="https://img-blog.csdnimg.cn/20191128155156933.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDE5NTc1Nw==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" data-proofer-ignore></p><p>对上面的代码进行简单的解释就是，SQLContext是所有的数据库操作的核心。SQLContext对象的read函数会返回一个DataFrameReader对象，DataFrameReader对象可以调用jdbc函数返回读取的数据库表，类型为Dataset，Dataset调用select可以筛选出一个至多个数据列（此处选择全部列其实是可以省略的，对结果没有影响），然后可以通过直接调用show函数直接以表格的形式直接输出在控制台。</p><blockquote><p>Spark官方文档有一段对SQLContext类的描述：“As of Spark 2.0, this is replaced by SparkSession. However, we are keeping the class here for backward compatibility.”；也就是说，在Spark 2.0之后的版本可以直接用SparkSession替代SQLContext，SQLContext的保留只是为了向下兼容。实测也是可以替代的。</p></blockquote><h2 id="三简单的读取数据库操作"><span class="mr-2">三、简单的读取数据库操作</span><a href="#三简单的读取数据库操作" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h2><p>为了体现出更多的数据库操作，将示例表格和数据进行复杂化，更新如下。</p><div class="language-sql highlighter-rouge"><div class="code-header"> <span data-label-text="Sql"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+</pre><td class="rouge-code"><pre><span class="k">drop</span> <span class="k">table</span> <span class="n">if</span> <span class="k">exists</span> <span class="n">people</span><span class="p">;</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">people</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">int</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="k">level</span> <span class="nb">smallint</span> <span class="k">default</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">experience</span> <span class="nb">float</span>
+<span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">people</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'zhu'</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">48</span><span class="p">.</span><span class="mi">24</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'katus'</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">82</span><span class="p">.</span><span class="mi">49</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s1">'li'</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">56</span><span class="p">.</span><span class="mi">34</span><span class="p">);</span>
+<span class="k">drop</span> <span class="k">table</span> <span class="n">if</span> <span class="k">exists</span> <span class="n">device</span><span class="p">;</span>
+<span class="k">create</span> <span class="k">table</span> <span class="n">device</span><span class="p">(</span>
+    <span class="n">id</span> <span class="nb">serial</span> <span class="k">primary</span> <span class="k">key</span><span class="p">,</span>
+    <span class="n">name</span> <span class="nb">varchar</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="n">price</span> <span class="nb">float</span> <span class="k">default</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">ownerId</span> <span class="nb">int</span> <span class="k">references</span> <span class="n">people</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">device</span> <span class="k">values</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'computer'</span><span class="p">,</span> <span class="mi">6250</span><span class="p">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'radio'</span><span class="p">,</span> <span class="mi">126</span><span class="p">.</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</pre></table></code></div></div><p>查询经验值大于50的人的姓名（name）和级别（level）并输出到控制台。</p><div class="language-java highlighter-rouge"><div class="code-header"> <span data-label-text="Java"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+</pre><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Dataset</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.Properties</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">DbConnect</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">SparkSession</span> <span class="n">session</span> <span class="o">=</span> <span class="nc">SparkSession</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">getOrCreate</span><span class="o">();</span>
+        <span class="nc">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SQLContext</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+
+        <span class="c1">// 数据库连接参数</span>
+        <span class="nc">String</span> <span class="n">dbUrl</span> <span class="o">=</span> <span class="s">"jdbc:mysql://localhost:3306/hivemetastore?serverTimezone=Asia/Shanghai"</span><span class="o">;</span>
+        <span class="nc">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">"people"</span><span class="o">;</span>
+        <span class="nc">Properties</span> <span class="n">connectionProperties</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Properties</span><span class="o">();</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"user"</span><span class="o">,</span> <span class="s">"root"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"password"</span><span class="o">,</span> <span class="s">"xxxxx123"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"driver"</span><span class="o">,</span> <span class="s">"com.mysql.cj.jdbc.Driver"</span><span class="o">);</span>
+
+        <span class="c1">// 查询经验值大于50的人的姓名（name）和级别（level）并输出到控制台</span>
+        <span class="nc">Dataset</span> <span class="n">people</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">read</span><span class="o">().</span><span class="na">jdbc</span><span class="o">(</span><span class="n">dbUrl</span><span class="o">,</span> <span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProperties</span><span class="o">).</span><span class="na">select</span><span class="o">(</span><span class="s">"*"</span><span class="o">);</span>
+        <span class="n">people</span><span class="o">.</span><span class="na">select</span><span class="o">(</span><span class="s">"name"</span><span class="o">,</span> <span class="s">"level"</span><span class="o">).</span><span class="na">filter</span><span class="o">(</span><span class="n">people</span><span class="o">.</span><span class="na">col</span><span class="o">(</span><span class="s">"experience"</span><span class="o">).</span><span class="na">gt</span><span class="o">(</span><span class="mi">50</span><span class="o">)).</span><span class="na">show</span><span class="o">();</span>
+
+        <span class="n">session</span><span class="o">.</span><span class="na">stop</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></table></code></div></div><p>输出结果如图。</p><p><img data-src="https://img-blog.csdnimg.cn/20191128163155962.png" alt="在这里插入图片描述" data-proofer-ignore></p><p>查询拥有ID为1的设备的人对应的编号（ID）、姓名（name）和经验值（experience）。</p><div class="language-java highlighter-rouge"><div class="code-header"> <span data-label-text="Java"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+</pre><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaPairRDD</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.function.PairFunction</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Row</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SQLContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Dataset</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">scala.Tuple2</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Properties</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">DbConnect</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">SparkSession</span> <span class="n">session</span> <span class="o">=</span> <span class="nc">SparkSession</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">getOrCreate</span><span class="o">();</span>
+        <span class="nc">SQLContext</span> <span class="n">sqlContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SQLContext</span><span class="o">(</span><span class="n">session</span><span class="o">);</span>
+
+        <span class="c1">// 数据库连接参数</span>
+        <span class="nc">String</span> <span class="n">dbUrl</span> <span class="o">=</span> <span class="s">"jdbc:mysql://localhost:3306/hivemetastore?serverTimezone=Asia/Shanghai"</span><span class="o">;</span>
+        <span class="nc">Properties</span> <span class="n">connectionProperties</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Properties</span><span class="o">();</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"user"</span><span class="o">,</span> <span class="s">"root"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"password"</span><span class="o">,</span> <span class="s">"xxxxx123"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"driver"</span><span class="o">,</span> <span class="s">"com.mysql.cj.jdbc.Driver"</span><span class="o">);</span>
+
+        <span class="c1">// 查询拥有ID为1的设备的人对应的编号（ID）、姓名（name）和经验值（experience）</span>
+        <span class="nc">Dataset</span> <span class="n">people</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">read</span><span class="o">().</span><span class="na">jdbc</span><span class="o">(</span><span class="n">dbUrl</span><span class="o">,</span> <span class="s">"people"</span><span class="o">,</span> <span class="n">connectionProperties</span><span class="o">);</span>
+        <span class="nc">Dataset</span> <span class="n">device</span> <span class="o">=</span> <span class="n">sqlContext</span><span class="o">.</span><span class="na">read</span><span class="o">().</span><span class="na">jdbc</span><span class="o">(</span><span class="n">dbUrl</span><span class="o">,</span> <span class="s">"device"</span><span class="o">,</span> <span class="n">connectionProperties</span><span class="o">);</span>
+
+        <span class="nc">JavaPairRDD</span> <span class="n">peopleRDD</span> <span class="o">=</span> <span class="n">people</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">().</span><span class="na">mapToPair</span><span class="o">((</span><span class="nc">PairFunction</span><span class="o">&lt;</span><span class="nc">Row</span><span class="o">,</span> <span class="nc">Integer</span><span class="o">,</span> <span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">,</span> <span class="nc">Double</span><span class="o">&gt;&gt;)</span> <span class="n">row</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="nc">Integer</span> <span class="n">personId</span> <span class="o">=</span> <span class="o">(</span><span class="nc">Integer</span><span class="o">)</span> <span class="n">row</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+            <span class="nc">String</span> <span class="n">personName</span> <span class="o">=</span> <span class="o">(</span><span class="nc">String</span><span class="o">)</span> <span class="n">row</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+            <span class="nc">Double</span> <span class="n">personExp</span> <span class="o">=</span> <span class="o">(</span><span class="nc">Double</span><span class="o">)</span> <span class="n">row</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="nc">Tuple2</span><span class="o">&lt;&gt;(</span><span class="n">personId</span><span class="o">,</span> <span class="k">new</span> <span class="nc">Tuple2</span><span class="o">&lt;&gt;(</span><span class="n">personName</span><span class="o">,</span> <span class="n">personExp</span><span class="o">));</span>
+        <span class="o">});</span>
+
+        <span class="nc">JavaPairRDD</span> <span class="n">deviceRDD</span> <span class="o">=</span> <span class="n">device</span><span class="o">.</span><span class="na">toJavaRDD</span><span class="o">().</span><span class="na">mapToPair</span><span class="o">((</span><span class="nc">PairFunction</span><span class="o">&lt;</span><span class="nc">Row</span><span class="o">,</span> <span class="nc">Integer</span><span class="o">,</span> <span class="nc">Integer</span><span class="o">&gt;)</span> <span class="n">row</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="nc">Integer</span> <span class="n">deviceId</span> <span class="o">=</span> <span class="o">(</span><span class="nc">Integer</span><span class="o">)</span> <span class="n">row</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+            <span class="nc">Integer</span> <span class="n">ownerId</span> <span class="o">=</span> <span class="o">(</span><span class="nc">Integer</span><span class="o">)</span> <span class="n">row</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">3</span><span class="o">);</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="nc">Tuple2</span><span class="o">&lt;&gt;(</span><span class="n">ownerId</span><span class="o">,</span> <span class="n">deviceId</span><span class="o">);</span>
+        <span class="o">});</span>
+
+        <span class="k">for</span> <span class="o">(</span><span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">,</span> <span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">,</span> <span class="nc">Double</span><span class="o">&gt;,</span> <span class="nc">Integer</span><span class="o">&gt;&gt;</span> <span class="n">item</span> <span class="o">:</span> <span class="o">(</span><span class="nc">Iterable</span><span class="o">&lt;</span><span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">,</span> <span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">Tuple2</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">,</span> <span class="nc">Double</span><span class="o">&gt;,</span> <span class="nc">Integer</span><span class="o">&gt;&gt;&gt;)</span> <span class="n">peopleRDD</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="n">deviceRDD</span><span class="o">).</span><span class="na">collect</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">item</span><span class="o">.</span><span class="na">_2</span><span class="o">().</span><span class="na">_2</span><span class="o">()</span> <span class="o">==</span> <span class="mi">1</span><span class="o">)</span> <span class="o">{</span>
+                <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"id: "</span> <span class="o">+</span> <span class="n">item</span><span class="o">.</span><span class="na">_1</span><span class="o">().</span><span class="na">toString</span><span class="o">()</span> <span class="o">+</span> <span class="s">" ; name: "</span> <span class="o">+</span> <span class="n">item</span><span class="o">.</span><span class="na">_2</span><span class="o">().</span><span class="na">_1</span><span class="o">().</span><span class="na">_1</span><span class="o">()</span> <span class="o">+</span> <span class="s">" ; exp: "</span> <span class="o">+</span> <span class="n">item</span><span class="o">.</span><span class="na">_2</span><span class="o">().</span><span class="na">_1</span><span class="o">().</span><span class="na">_2</span><span class="o">().</span><span class="na">toString</span><span class="o">());</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="n">session</span><span class="o">.</span><span class="na">stop</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></table></code></div></div><p>运行结果如图。</p><p><img data-src="https://img-blog.csdnimg.cn/20191129104821553.png" alt="在这里插入图片描述" data-proofer-ignore></p><p>最后一个查询相对而言还是十分复杂的，此处涉及到两个表格的自然连接操作，直接对单一表格的SQL查询是难以实现的，因此将每个表格的查询结果转化为RDD，然后使用RDD中的join操作，最后遍历结果，筛选出符合条件的记录。但是这种实现从代码角度考虑前面的操作虽然有分布式计算的加速，但是最后对于join结果的遍历是完全依靠Driver程序实现的，这个运算效率会大大下降，因此可以考虑在join之前就对表格记录进行尽可能地筛选，减少最后Driver程序的运算量。（当然这个只是个人的实现，可能还存在更加简单高效的实现方法，待进一步研究）</p><h2 id="四简单的写入数据库操作"><span class="mr-2">四、简单的写入数据库操作</span><a href="#四简单的写入数据库操作" class="anchor text-muted"><i class="fas fa-hashtag"></i></a></h2><p>实现向数据库表people中插入两条数据，初始时数据库people表记录如下。</p><p><img data-src="https://img-blog.csdnimg.cn/20191129112014224.png" alt="在这里插入图片描述" data-proofer-ignore></p><p>然后新创建一个Java类，填充如下代码。</p><div class="language-java highlighter-rouge"><div class="code-header"> <span data-label-text="Java"><i class="fas fa-code small"></i></span> <button aria-label="copy" data-title-succeed="已复制！"><i class="far fa-clipboard"></i></button></div><div class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+</pre><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaRDD</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.JavaSparkContext</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.api.java.function.Function</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Dataset</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.Row</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.RowFactory</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.types.DataTypes</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.apache.spark.sql.types.StructType</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.ArrayList</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Arrays</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Properties</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">DbWrite</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">SparkSession</span> <span class="n">session</span> <span class="o">=</span> <span class="nc">SparkSession</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">getOrCreate</span><span class="o">();</span>
+        <span class="nc">JavaSparkContext</span> <span class="n">sparkContext</span> <span class="o">=</span> <span class="nc">JavaSparkContext</span><span class="o">.</span><span class="na">fromSparkContext</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">sparkContext</span><span class="o">());</span>
+
+        <span class="c1">// 数据库连接参数</span>
+        <span class="nc">String</span> <span class="n">dbUrl</span> <span class="o">=</span> <span class="s">"jdbc:mysql://localhost:3306/hivemetastore?serverTimezone=Asia/Shanghai"</span><span class="o">;</span>
+        <span class="nc">Properties</span> <span class="n">connectionProperties</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Properties</span><span class="o">();</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"user"</span><span class="o">,</span> <span class="s">"root"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"password"</span><span class="o">,</span> <span class="s">"xxxxx123"</span><span class="o">);</span>
+        <span class="n">connectionProperties</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"driver"</span><span class="o">,</span> <span class="s">"com.mysql.cj.jdbc.Driver"</span><span class="o">);</span>
+        
+        <span class="c1">// 构建新的数据记录RDD</span>
+        <span class="nc">JavaRDD</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;</span> <span class="n">personData</span> <span class="o">=</span> <span class="n">sparkContext</span><span class="o">.</span><span class="na">parallelize</span><span class="o">(</span><span class="nc">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"4,jiang,5,79.46"</span><span class="o">,</span> <span class="s">"5,wan,4,63.49"</span><span class="o">));</span>
+        
+        <span class="c1">// 将RDD成员（String）分割成四个field</span>
+        <span class="nc">JavaRDD</span><span class="o">&lt;</span><span class="nc">Row</span><span class="o">&gt;</span> <span class="n">personsRDD</span> <span class="o">=</span> <span class="n">personData</span><span class="o">.</span><span class="na">map</span><span class="o">((</span><span class="nc">Function</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">,</span> <span class="nc">Row</span><span class="o">&gt;)</span> <span class="n">line</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="nc">String</span><span class="o">[]</span> <span class="n">splited</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">","</span><span class="o">);</span>
+            <span class="k">return</span> <span class="nc">RowFactory</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="nc">Integer</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">splited</span><span class="o">[</span><span class="mi">0</span><span class="o">]),</span> <span class="n">splited</span><span class="o">[</span><span class="mi">1</span><span class="o">],</span> <span class="nc">Integer</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">splited</span><span class="o">[</span><span class="mi">2</span><span class="o">]),</span> <span class="nc">Double</span><span class="o">.</span><span class="na">valueOf</span><span class="o">(</span><span class="n">splited</span><span class="o">[</span><span class="mi">3</span><span class="o">]));</span>
+        <span class="o">});</span>
+
+        <span class="nc">List</span> <span class="n">structFields</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ArrayList</span><span class="o">();</span>
+        <span class="n">structFields</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="nc">DataTypes</span><span class="o">.</span><span class="na">createStructField</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="nc">DataTypes</span><span class="o">.</span><span class="na">IntegerType</span><span class="o">,</span> <span class="kc">false</span><span class="o">));</span>
+        <span class="n">structFields</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="nc">DataTypes</span><span class="o">.</span><span class="na">createStructField</span><span class="o">(</span><span class="s">"name"</span><span class="o">,</span> <span class="nc">DataTypes</span><span class="o">.</span><span class="na">StringType</span><span class="o">,</span> <span class="kc">true</span><span class="o">));</span>
+        <span class="n">structFields</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="nc">DataTypes</span><span class="o">.</span><span class="na">createStructField</span><span class="o">(</span><span class="s">"level"</span><span class="o">,</span> <span class="nc">DataTypes</span><span class="o">.</span><span class="na">IntegerType</span><span class="o">,</span> <span class="kc">true</span><span class="o">));</span>
+        <span class="n">structFields</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="nc">DataTypes</span><span class="o">.</span><span class="na">createStructField</span><span class="o">(</span><span class="s">"experience"</span><span class="o">,</span> <span class="nc">DataTypes</span><span class="o">.</span><span class="na">DoubleType</span><span class="o">,</span> <span class="kc">true</span><span class="o">));</span>
+
+        <span class="c1">// 构建StructType（类似创建一个表格结构的描述）</span>
+        <span class="nc">StructType</span> <span class="n">structType</span> <span class="o">=</span> <span class="nc">DataTypes</span><span class="o">.</span><span class="na">createStructType</span><span class="o">(</span><span class="n">structFields</span><span class="o">);</span>
+        <span class="c1">// 构建数据集（用于和数据库对接）</span>
+        <span class="nc">Dataset</span> <span class="n">personsDF</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="na">createDataFrame</span><span class="o">(</span><span class="n">personsRDD</span><span class="o">,</span> <span class="n">structType</span><span class="o">);</span>
+        <span class="c1">// 以追加的形式写入数据库的people</span>
+        <span class="n">personsDF</span><span class="o">.</span><span class="na">write</span><span class="o">().</span><span class="na">mode</span><span class="o">(</span><span class="s">"append"</span><span class="o">).</span><span class="na">jdbc</span><span class="o">(</span><span class="n">dbUrl</span><span class="o">,</span> <span class="s">"people"</span><span class="o">,</span> <span class="n">connectionProperties</span><span class="o">);</span>
+
+        <span class="n">session</span><span class="o">.</span><span class="na">stop</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</pre></table></code></div></div><p>运行之后数据库中数据发生了如下变化。</p><p><img data-src="https://img-blog.csdnimg.cn/20191129112914863.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NDE5NTc1Nw==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述" data-proofer-ignore></p></div><div class="post-tail-wrapper text-muted"><div class="post-meta mb-3"> <i class="far fa-folder-open fa-fw mr-1"></i> <a href='/categories/distributed-computing/'>Distributed Computing</a></div><div class="post-tags"> <i class="fa fa-tags fa-fw mr-1"></i> <a href="/tags/spark/" class="post-tag no-text-decoration" >Spark</a> <a href="/tags/hadoop/" class="post-tag no-text-decoration" >Hadoop</a></div><div class="post-tail-bottom d-flex justify-content-between align-items-center mt-3 pt-5 pb-2"><div class="license-wrapper"> 本文由作者按照 <a href="https://creativecommons.org/licenses/by/4.0/"> CC BY 4.0 </a> 进行授权</div><div class="share-wrapper"> <span class="share-label text-muted mr-1">分享</span> <span class="share-icons"> <a href="https://twitter.com/intent/tweet?text=Spark%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C%E5%88%9D%E6%AD%A5+-+SUN+Katus%27+Blog&url=https%3A%2F%2Fkatus98.github.io%2Fposts%2Fspark-db%2F" data-toggle="tooltip" data-placement="top" title="Twitter" target="_blank" rel="noopener" aria-label="Twitter"> <i class="fa-fw fab fa-twitter"></i> </a> <a href="https://www.facebook.com/sharer/sharer.php?title=Spark%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C%E5%88%9D%E6%AD%A5+-+SUN+Katus%27+Blog&u=https%3A%2F%2Fkatus98.github.io%2Fposts%2Fspark-db%2F" data-toggle="tooltip" data-placement="top" title="Facebook" target="_blank" rel="noopener" aria-label="Facebook"> <i class="fa-fw fab fa-facebook-square"></i> </a> <a href="https://t.me/share/url?url=https%3A%2F%2Fkatus98.github.io%2Fposts%2Fspark-db%2F&text=Spark%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C%E5%88%9D%E6%AD%A5+-+SUN+Katus%27+Blog" data-toggle="tooltip" data-placement="top" title="Telegram" target="_blank" rel="noopener" aria-label="Telegram"> <i class="fa-fw fab fa-telegram"></i> </a> <i id="copy-link" class="fa-fw fas fa-link small" data-toggle="tooltip" data-placement="top" title="分享链接" data-title-succeed="链接已复制！"> </i> </span></div></div></div></div></div><div id="panel-wrapper" class="col-xl-3 pl-2 text-muted"><div class="access"><div id="access-lastmod" class="post"><div class="panel-heading">最近更新</div><ul class="post-content pl-0 pb-1 ml-1 mt-2"><li><a href="/posts/mybatis-spring-scanner/">Mybatis的Spring插件扫描原理</a><li><a href="/posts/java-thread/">Java开发技术之多线程</a></ul></div><div id="access-tags"><div class="panel-heading">热门标签</div><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/java/">Java</a> <a class="post-tag" href="/tags/hadoop/">Hadoop</a> <a class="post-tag" href="/tags/spark/">Spark</a> <a class="post-tag" href="/tags/multithreading/">Multithreading</a> <a class="post-tag" href="/tags/computer-network/">Computer Network</a> <a class="post-tag" href="/tags/linux/">Linux</a> <a class="post-tag" href="/tags/multiprocessing/">Multiprocessing</a> <a class="post-tag" href="/tags/mybatis/">Mybatis</a> <a class="post-tag" href="/tags/operating-system/">Operating System</a> <a class="post-tag" href="/tags/spring/">Spring</a></div></div></div><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@1.0.1/dist/bootstrap-toc.min.js"></script><div id="toc-wrapper" class="pl-0 pr-4 mb-5"><div class="panel-heading pl-3 pt-2 mb-2">文章内容</div><nav id="toc" data-toggle="toc"></nav></div></div></div><div class="row"><div id="tail-wrapper" class="col-12 col-lg-11 col-xl-9 pl-3 pr-3 pr-xl-4"><div id="related-posts" class="mt-5 mb-2 mb-sm-4"><h3 class="pt-2 mt-1 mb-4 ml-1" data-toc-skip>相关文章</h3><div class="card-deck mb-4"><div class="card"> <a href="/posts/spark-environment/"><div class="card-body"> <em class="small" data-ts="1574740607" data-df="YYYY-MM-DD" > 2019-11-26 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Spark开发环境搭建</h3><div class="text-muted small"><p> 前言：本人水平有限，目前在前辈的指导下进行Spark开发的自学，在此整理出自学笔记，主要是巩固一下学习的内容，如果本文内容能对各位读者有所启发，我将十分高兴。另外由于个人水平有限，所写内容难免有疏漏之处，欢迎各位批评指出。 环境： 操作系统：Windows 10 1909版本 IDE：IntelliJ IDEA Ultimate 2019.2.4版本 ...</p></div></div></a></div><div class="card"> <a href="/posts/spark-rdd/"><div class="card-body"> <em class="small" data-ts="1574838509" data-df="YYYY-MM-DD" > 2019-11-27 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Spark RDD初探</h3><div class="text-muted small"><p> 弹性分布式数据集（Resilient Distributed Dataset，RDD）是Spark中的核心概念，基本上所有的Spark运算操作对象都是RDD，我们今天就来简单认识一下这个RDD。 说明：由于本文的开发基于Java，因此所有的观点都是基于Java的。 一、RDD的创建 RDD是一种数据集，初步我们可以将其想象成一个数组类似的数据结构，先不去管实际的存储结构。R...</p></div></div></a></div><div class="card"> <a href="/posts/mybatis-spring-scanner/"><div class="card-body"> <em class="small" data-ts="1662952577" data-df="YYYY-MM-DD" > 2022-09-12 </em><h3 class="pt-0 mt-1 mb-3" data-toc-skip>Mybatis的Spring插件扫描原理</h3><div class="text-muted small"><p> 本文主要针对Mybatis的Spring插件的扫描进行分析，从MapperScan注解切入，进行源码层面的简要解读。 一、@MapperScan注解 @MapperScan是Mybatis的Spring插件的核心扫描配置，其通过Spring配置的@Import注解注册其核心配置。 1 2 3 4 5 6 7 8 9 10 package org.myba...</p></div></div></a></div></div></div><div class="post-navigation d-flex justify-content-between"> <a href="/posts/spark-rdd/" class="btn btn-outline-primary" prompt="上一篇"><p>Spark RDD初探</p></a> <a href="/posts/java-adv/" class="btn btn-outline-primary" prompt="下一篇"><p>Java基础开发技术查缺补漏笔记</p></a></div></div></div><footer class="row pl-3 pr-3"><div class="col-12 d-flex justify-content-between align-items-center text-muted pl-0 pr-0"><div class="footer-left"><p class="mb-0"> © 2022 <a href="https://twitter.com/katus_SKR">SUN Katus</a>. <span data-toggle="tooltip" data-placement="top" title="除非另有说明，本网站上的博客文章均由作者按照知识共享署名 4.0 国际 (CC BY 4.0) 许可协议进行授权。">保留部分权利。</span></p></div><div class="footer-right"><p class="mb-0"> 本站由 <a href="https://jekyllrb.com" target="_blank" rel="noopener">Jekyll</a> 生成，采用 <a href="https://github.com/cotes2020/jekyll-theme-chirpy" target="_blank" rel="noopener">Chirpy</a> 主题。</p></div></div></footer></div><div id="search-result-wrapper" class="d-flex justify-content-center unloaded"><div class="col-12 col-sm-11 post-content"><div id="search-hints"><div id="access-tags"><div class="panel-heading">热门标签</div><div class="d-flex flex-wrap mt-3 mb-1 mr-3"> <a class="post-tag" href="/tags/java/">Java</a> <a class="post-tag" href="/tags/hadoop/">Hadoop</a> <a class="post-tag" href="/tags/spark/">Spark</a> <a class="post-tag" href="/tags/multithreading/">Multithreading</a> <a class="post-tag" href="/tags/computer-network/">Computer Network</a> <a class="post-tag" href="/tags/linux/">Linux</a> <a class="post-tag" href="/tags/multiprocessing/">Multiprocessing</a> <a class="post-tag" href="/tags/mybatis/">Mybatis</a> <a class="post-tag" href="/tags/operating-system/">Operating System</a> <a class="post-tag" href="/tags/spring/">Spring</a></div></div></div><div id="search-results" class="d-flex flex-wrap justify-content-center text-muted mt-3"></div></div></div></div><div id="mask"></div><a id="back-to-top" href="#" aria-label="back-to-top" class="btn btn-lg btn-box-shadow" role="button"> <i class="fas fa-angle-up"></i> </a><div id="notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-animation="true" data-autohide="false"><div class="toast-header"> <button type="button" class="ml-2 ml-auto close" data-dismiss="toast" aria-label="Close"> <span aria-hidden="true">&times;</span> </button></div><div class="toast-body text-center pt-0"><p class="pl-2 pr-2 mb-3">发现新版本的内容。</p><button type="button" class="btn btn-primary" aria-label="Update"> 更新 </button></div></div><script src="https://cdn.jsdelivr.net/npm/simple-jekyll-search@1.10.0/dest/simple-jekyll-search.min.js"></script> <script> SimpleJekyllSearch({ searchInput: document.getElementById('search-input'), resultsContainer: document.getElementById('search-results'), json: '/assets/js/data/search.json', searchResultTemplate: '<div class="pl-1 pr-1 pl-sm-2 pr-sm-2 pl-lg-4 pr-lg-4 pl-xl-0 pr-xl-0"> <a href="{url}">{title}</a><div class="post-meta d-flex flex-column flex-sm-row text-muted mt-1 mb-1"> {categories} {tags}</div><p>{snippet}</p></div>', noResultsText: '<p class="mt-5">搜索结果为空</p>', templateMiddleware: function(prop, value, template) { if (prop === 'categories') { if (value === '') { return `${value}`; } else { return `<div class="mr-sm-4"><i class="far fa-folder fa-fw"></i>${value}</div>`; } } if (prop === 'tags') { if (value === '') { return `${value}`; } else { return `<div><i class="fa fa-tag fa-fw"></i>${value}</div>`; } } } }); </script> <script src="https://cdn.jsdelivr.net/combine/npm/magnific-popup@1/dist/jquery.magnific-popup.min.js,npm/lozad/dist/lozad.min.js,npm/clipboard@2/dist/clipboard.min.js"></script> <script src="https://cdn.jsdelivr.net/combine/npm/dayjs@1/dayjs.min.js,npm/dayjs@1/locale/zh.min.js,npm/dayjs@1/plugin/relativeTime.min.js,npm/dayjs@1/plugin/localizedFormat.min.js"></script> <script defer src="/assets/js/dist/post.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.bundle.min.js"></script> <script defer src="/app.js"></script>
