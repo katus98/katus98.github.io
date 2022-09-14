@@ -149,49 +149,46 @@ typora-root-url: ..
   public interface BeanFactoryPostProcessor {
       void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException;
   }
-  ```
   
   public interface BeanDefinitionRegistryPostProcessor extends BeanFactoryPostProcessor {
-  
       void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException;
-  
   }
-
-```
+  ```
+  
 + `MapperScannerConfigurer`配置类在Bean工厂后置处理器的关键回调中，实例化了一个`ClassPathMapperScanner`扫描类，用来扫描所有符合Mybatis映射器（mapper）规范的接口。
 
-```java
-package org.mybatis.spring.mapper;
-
-public class MapperScannerConfigurer
-    implements BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware {
-
-  @Override
-  public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
-    if (this.processPropertyPlaceHolders) {
-      processPropertyPlaceHolders();
+  ```java
+  package org.mybatis.spring.mapper;
+  
+  public class MapperScannerConfigurer
+      implements BeanDefinitionRegistryPostProcessor, InitializingBean, ApplicationContextAware, BeanNameAware {
+  
+    @Override
+    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+      if (this.processPropertyPlaceHolders) {
+        processPropertyPlaceHolders();
+      }
+  
+      ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
+      scanner.setAddToConfig(this.addToConfig);
+      scanner.setAnnotationClass(this.annotationClass);
+      scanner.setMarkerInterface(this.markerInterface);
+      scanner.setSqlSessionFactory(this.sqlSessionFactory);
+      scanner.setSqlSessionTemplate(this.sqlSessionTemplate);
+      scanner.setSqlSessionFactoryBeanName(this.sqlSessionFactoryBeanName);
+      scanner.setSqlSessionTemplateBeanName(this.sqlSessionTemplateBeanName);
+      scanner.setResourceLoader(this.applicationContext);
+      scanner.setBeanNameGenerator(this.nameGenerator);
+      scanner.setMapperFactoryBeanClass(this.mapperFactoryBeanClass);
+      if (StringUtils.hasText(lazyInitialization)) {
+        scanner.setLazyInitialization(Boolean.valueOf(lazyInitialization));
+      }
+      scanner.registerFilters();
+      scanner.scan(
+          StringUtils.tokenizeToStringArray(this.basePackage, ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS));
     }
-
-    ClassPathMapperScanner scanner = new ClassPathMapperScanner(registry);
-    scanner.setAddToConfig(this.addToConfig);
-    scanner.setAnnotationClass(this.annotationClass);
-    scanner.setMarkerInterface(this.markerInterface);
-    scanner.setSqlSessionFactory(this.sqlSessionFactory);
-    scanner.setSqlSessionTemplate(this.sqlSessionTemplate);
-    scanner.setSqlSessionFactoryBeanName(this.sqlSessionFactoryBeanName);
-    scanner.setSqlSessionTemplateBeanName(this.sqlSessionTemplateBeanName);
-    scanner.setResourceLoader(this.applicationContext);
-    scanner.setBeanNameGenerator(this.nameGenerator);
-    scanner.setMapperFactoryBeanClass(this.mapperFactoryBeanClass);
-    if (StringUtils.hasText(lazyInitialization)) {
-      scanner.setLazyInitialization(Boolean.valueOf(lazyInitialization));
-    }
-    scanner.registerFilters();
-    scanner.scan(
-        StringUtils.tokenizeToStringArray(this.basePackage, ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS));
   }
-}
-```
+  ```
 
 ## 四、ClassPathMapperScanner扫描类
 
